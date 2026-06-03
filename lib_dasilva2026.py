@@ -27,6 +27,7 @@ class TRACERSData:
     flux: np.ndarray
     spect: np.ndarray
     mlat: np.array
+    mlt: np.array
     
     def subset(self, stime, etime):
         i = np.searchsorted(self.time, stime)
@@ -38,6 +39,7 @@ class TRACERSData:
             flux=self.flux[i:j],
             spect=self.spect[i:j],
             mlat=self.mlat[i:j],
+            mlt=self.mlt[i:j],
         )
 
     def plot_spect(self, fig=None, ax=None, Eic=False, Eic_times=None, Eic_frac=EIC_FRAC, cmap=None):
@@ -278,12 +280,15 @@ def load_data(aci_file, ead_file=None, mlat=None, omni_spect=False):
     # Load MLat from ACI file
     if mlat is not None:
         mlat = mlat * np.ones(time.size)
+        mlt = np.nan * np.ones(time.size)
+        
     elif ead_file:
         cdf = pycdf.CDF(ead_file)
     
         ead_time = cdf['Epoch'][:]
         ead_mlat = cdf[f'{key}_ead_mlat'][:]
-    
+        ead_mlt = cdf[f'{key}_ead_mlt'][:]
+
         cdf.close()
     
         mlat = np.interp(
@@ -291,6 +296,12 @@ def load_data(aci_file, ead_file=None, mlat=None, omni_spect=False):
             xp=date2num(ead_time),
             fp=ead_mlat
         )
+        mlt = np.interp(
+            x=date2num(time),
+            xp=date2num(ead_time),
+            fp=ead_mlt
+        )
+
     else:
         raise RuntimeError()
     
@@ -302,6 +313,7 @@ def load_data(aci_file, ead_file=None, mlat=None, omni_spect=False):
         flux=flux,
         spect=spect,
         mlat=mlat,
+        mlt=mlt,
     )
 
     
