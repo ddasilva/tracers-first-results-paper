@@ -17,7 +17,7 @@ TRACERS_ALTITUDE = 600
 B0 = 30e3 * units.nT
 
 
-def estimate_reconn_rate(t, Eic, mlat, alpha, d, ignore_uncertain=True, Bmp=50, altitude=TRACERS_ALTITUDE, Bs=None, Vs=7.8, return_error=False, forward=True):
+def estimate_reconn_rate(t, Eic, mlat, alpha, d, ignore_uncertain=True, Bmp=50, altitude=TRACERS_ALTITUDE, Bs=None, Vs=7.8, return_error=False, ascending=True):
     """Estimate reconnection rate using in-situ measurements and
     solar wind data. 
 
@@ -48,7 +48,7 @@ def estimate_reconn_rate(t, Eic, mlat, alpha, d, ignore_uncertain=True, Bmp=50, 
     
     dEicdt = dEic/dt
     
-    if not forward:
+    if not ascending:
         dEicdt = -dEicdt
     dEicdt[dEicdt < 0] = np.nan
     
