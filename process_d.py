@@ -27,7 +27,9 @@ df = df.reset_index()
 
 omni_data = lib_dasilva2026.load_omni(glob.glob(f"data/{args.storm_name}/omni/*/*.cdf"))
 
-xline_files = glob.glob(f"data/{args.storm_name}/KH_Xline_Data/**/*.txt")
+xline_files = []
+xline_files.extend(glob.glob(f"data/{args.storm_name}/KH_Xline_Data/**/*.txt"))
+xline_files.extend(glob.glob(f"data/{args.storm_name}/KH_Xline_Data/*.txt"))
 xline_times = []
 
 for fname in xline_files:
@@ -40,6 +42,9 @@ xline_times = np.array(xline_times)
 print(xline_times)
 
 for i, row in tqdm.tqdm(list(df.iterrows())):
+    if i in (2,3) and args.storm_name.lower() == "sept30_storm":
+        continue
+
     print('#' * 60)
     print(f'# Working on Row {i} out of {len(df) - 1}')
     print('#' * 60)
@@ -50,7 +55,10 @@ for i, row in tqdm.tqdm(list(df.iterrows())):
     stime = row.start_time.to_pydatetime()
     xline_time = xline_times[np.argmin(np.abs(xline_times - stime))]
     time_str = xline_time.strftime("%Y%m%d_%H%M")
-    xline_file = glob.glob(f"data/{args.storm_name}/KH_Xline_Data/**/{time_str}*.txt")[0]
+    xline_files = []
+    xline_files.extend(glob.glob(f"data/{args.storm_name}/KH_Xline_Data/**/{time_str}*.txt"))
+    xline_files.extend(glob.glob(f"data/{args.storm_name}/KH_Xline_Data/{time_str}*.txt"))
+    xline_file = xline_files[0]
 
     # Ten attempts with increasingly larger windows. Eventually we will
     # reach a neighbor size equal to len(df_xline), which is an exhaustive
