@@ -60,11 +60,18 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False):
     # Make Plot
     # ---------------------------------------------------------------
     fig, axes = plt.subplots(4, 1, figsize=(8, 8), sharex=True)
+    top_x = []
+    top_y = []
     
     for i in range(len(df)):
         xs = [df.iloc[i].start_time] * len(recon_rates[i])
         ys = recon_rates[i].recon_rate
         axes[0].plot(xs, ys, 'k.')
+        top_x.append(df.iloc[i].start_time)
+        m = recon_rates[i].recon_rate < 5
+        top_y.append(np.max(recon_rates[i].recon_rate[m]))
+
+    #axes[0].plot(top_x, top_y, color='k')
     
     axes[0].set_ylim(0, 5)
     axes[0].set_ylabel('Reconnection Rates\n(mV/m)')
