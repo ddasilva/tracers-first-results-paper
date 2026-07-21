@@ -129,6 +129,6 @@ def make_event_vis(row, ace_file, scoring_file, d, title_label, dispersion_stime
     )
     imf_str = f"IMF = <{row.Bx:.1f}, {row.By:.1f}, {row.Bz:.1f}> nT"
     y = .97 if ace_data else .99
-    fig.suptitle(f'Reconnection Rate Calculation with TRACERS: {title_label}\n{time_str}\n{imf_str}', y=y)
+    fig.suptitle(f'{title_label}\n{time_str}\n{imf_str}', y=y)
     
     return fig

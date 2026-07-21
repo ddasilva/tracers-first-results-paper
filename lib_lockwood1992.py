@@ -38,18 +38,29 @@ def estimate_reconn_rate(t, Eic, mlat, alpha, d, ignore_uncertain=True, Bmp=50, 
     # of Eic.
     # ------------------------------------------------------------------------
     # dEic/dt
-    dEic = np.diff(Eic.value).tolist()
-    dEic.append(dEic[-1])
-    dEic = np.array(dEic) * units.eV
+    #dEic = np.diff(Eic.value).tolist()
+    #dEic.append(dEic[-1])
+    #dEic = np.array(dEic) * units.eV
 
-    dt = [delta.total_seconds() for delta in np.diff(t)]
-    dt.append(dt[-1])
-    dt = np.array(dt) * units.s
+    #dt = [delta.total_seconds() for delta in np.diff(t)]
+    #dt.append(dt[-1])
+    #dt = np.array(dt) * units.s
+    #dEicdt = dEic/dt
+
+    dt = (t[1] - t[0]).total_seconds()
+    Eic_ = Eic.value.copy()
+    if ascending:
+        mask = np.diff(Eic_) < 0
+    else:
+        mask = np.diff(Eic_) > 0
     
-    dEicdt = dEic/dt
+    Eic_[1:][mask] = np.nan
+    Eic_[:-1][mask] = np.nan
+    dEicdt = np.gradient(Eic_, dt) * units.eV / units.s
     
     if not ascending:
         dEicdt = -dEicdt
+
     dEicdt[dEicdt < 0] = np.nan
     
     # Magnetc field at MP
