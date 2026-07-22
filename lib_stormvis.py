@@ -112,9 +112,9 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
             print(i, top_x[i], reg.rvalue**2)
             r2.append(reg.rvalue**2)
             
-    axes[1].plot(omni_epoch, omni_Bx, label='Bx', linewidth=0.5)
-    axes[1].plot(omni_epoch, omni_By, label='By', linewidth=0.5)
-    axes[1].plot(omni_epoch, omni_Bz, label='Bz', linewidth=0.5)
+    axes[1].plot(omni_epoch, omni_Bx, label='Bx', linewidth=0.5, color='#0000ff')
+    axes[1].plot(omni_epoch, omni_By, label='By', linewidth=0.5, color='#00ff00')
+    axes[1].plot(omni_epoch, omni_Bz, label='Bz', linewidth=0.5, color='#ff0000')
     axes[1].plot(omni_epoch, np.sqrt(omni_Bx**2 + omni_By**2 + omni_Bz**2), label='|B|', color='k', linewidth=0.5)
     axes[1].legend(ncol=1, bbox_to_anchor=(1.1, .5), loc='center right')
     axes[1].grid(linestyle='dashed')
