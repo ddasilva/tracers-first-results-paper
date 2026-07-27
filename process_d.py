@@ -42,9 +42,6 @@ xline_times = np.array(xline_times)
 print(xline_times)
 
 for i, row in tqdm.tqdm(list(df.iterrows())):
-    if i in (2,3) and args.storm_name.lower() == "sept30_storm":
-        continue
-
     print('#' * 60)
     print(f'# Working on Row {i} out of {len(df) - 1}')
     print('#' * 60)
