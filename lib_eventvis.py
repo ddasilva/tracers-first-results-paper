@@ -8,9 +8,10 @@ import importlib
 import pylab as plt
 import numpy as np
 import pandas as pd
+from datetime import timedelta
 
 
-def make_event_vis(row, ace_file, scoring_file, d, title_label, dispersion_stime, dispersion_etime, ascending=True, eic_legend_loc='upper right'):
+def make_event_vis(row, ace_file, scoring_file, d, title_label, dispersion_stime, dispersion_etime, alpha=0, ascending=True, offset_timedelta=timedelta(seconds=0), eic_legend_loc='upper right'):
     # Load ACE data -----------------------------
     if ace_file is None:
         ace_data = False
@@ -33,7 +34,7 @@ def make_event_vis(row, ace_file, scoring_file, d, title_label, dispersion_stime
     Eic = dispersion_subset.find_Eic(Eic_frac=0.1)
     
     recon_rate, err_low, err_high = dispersion_subset.calculate_recon_rate(
-        alpha=0,
+        alpha=alpha,
         d=d,
         Eic_frac=0.1,
         ascending=ascending,
@@ -122,6 +123,7 @@ def make_event_vis(row, ace_file, scoring_file, d, title_label, dispersion_stime
     
     ax4.set_xticklabels(new_xticklabels)
     ax4.text(-0.15, -0.4, "Time\nMLAT\nMLT", transform=ax4.transAxes)
+    ax4.set_xlim(row.start_time + offset_timedelta, row.end_time)
     
     time_str = (
               f"{subset_data.time[0].strftime('%Y-%m-%d')},  "

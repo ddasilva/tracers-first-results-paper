@@ -9,6 +9,8 @@ from scipy.interpolate import make_smoothing_spline
 from matplotlib.dates import date2num
 from datetime import timedelta
 
+SMOOTH_LAMBDA = 0.25
+
 def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
     df = pd.read_csv(f'output/{storm}_filtered.csv', parse_dates=['start_time', 'end_time'], index_col=0)
 
@@ -94,7 +96,7 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
         ax.set_ylabel('SuperDARN\nCross Polar\nCap Potential (kV)', color='C0')
         ax.tick_params(axis='y', labelcolor='C0')
         ax.set_ylim(0, max(ax.get_ylim()))        
-        spl = make_smoothing_spline(date2num(df_cpcp.DATE), df_cpcp.CPCP / 1000, lam=1e1)
+        spl = make_smoothing_spline(date2num(df_cpcp.DATE), df_cpcp.CPCP / 1000, lam=SMOOTH_LAMBDA)
         ax.plot(df_cpcp.DATE, spl(date2num(df_cpcp.DATE)), color='C0')
 
         dt = timedelta(hours=1)
@@ -139,7 +141,7 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
         plt.figure()
     
         fig, axes = plt.subplot_mosaic(
-            [["dispersion", "scatter"], ["r2", "scatter"], ["symh", "scatter"]], figsize=(18, 9),
+            [["dispersion", "scatter"], ["r2", "scatter"], ["symh", "scatter"]], figsize=(14, 7),
         )
 
         # Plot Dispersion
@@ -161,10 +163,10 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
         # Plot CPCP
         ax = ax.twinx()
         ax.plot(df_cpcp.DATE, df_cpcp.CPCP / 1000, alpha=0.5)
-        ax.set_ylabel('SuperDARN\nCross Polar\nCap Potential (kV)', color='C0')
+        ax.set_ylabel('SuperDARN\nCPCP (kV)', color='C0')
         ax.tick_params(axis='y', labelcolor='C0')
         ax.set_ylim(0, max(ax.get_ylim()))        
-        spl = make_smoothing_spline(date2num(df_cpcp.DATE), df_cpcp.CPCP / 1000, lam=1e1)
+        spl = make_smoothing_spline(date2num(df_cpcp.DATE), df_cpcp.CPCP / 1000, lam=SMOOTH_LAMBDA)
         ax.plot(df_cpcp.DATE, spl(date2num(df_cpcp.DATE)), color='C0')
 
         # Cumulative R2
@@ -173,7 +175,7 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
         i = np.nanargmax(r2)
         print(i)
 
-        ax.text(df.start_time.iloc[0], sum(ax.get_ylim())/4, 'Correlation Less Meaningful\nfor $\\leq$3 Points') 
+        ax.text(df.start_time.iloc[0], sum(ax.get_ylim())/4, 'Correlation Less\nMeaningful for\n$\\leq$3 Points') 
         
         ax.plot(df.start_time[:i+1], r2[:i+1], 'o-', color='#000000', label='Onset and Main Phase')
         ax.plot(df.start_time, r2, 'o-', color='#cccccc', label='Recovery Period')
@@ -205,12 +207,15 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
         ax.plot(xvals, yvals, '-', color='k', label='Regression Fit (Onset and Main Phase Points)')
         ax.legend()
 
-        ax.set_ylabel('Maximum Reconnection Rate per Dispersion (mV/m)')
+        ax.set_ylabel('Maximum Reconnection Rate\nper Dispersion (mV/m)')
         ax.set_xlabel('Smoothed SuperDARN Cross Polar Cap Potential (kV)')
         
         axes['r2'].set_xlim(axes['dispersion'].get_xlim())
         axes['symh'].set_xlim(axes['dispersion'].get_xlim())
 
+        for ax in [axes['r2'], axes['symh'], axes['dispersion']]:
+            ax.xaxis.set_major_locator(mdates.DayLocator(interval=3))
+        
         fig.suptitle('Reconnection Rate and SuperDARN CPCP Correlation Analysis', y=0.92, fontsize=14)
         fig.savefig(f'plots/{storm}_r2_analysis.png', dpi=300, bbox_inches='tight')
         
