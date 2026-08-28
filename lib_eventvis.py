@@ -93,12 +93,12 @@ def make_event_vis(row, ace_file, scoring_file, d, title_label, dispersion_stime
     # Colorbar tweaking
     divider = make_axes_locatable(ax1)
     cax = divider.append_axes('right', size='5%', pad=0.05)
-    fig.colorbar(im, cax=cax, orientation='vertical').set_label(r'Summed Omni Flux')
+    fig.colorbar(im, cax=cax, orientation='vertical').set_label('Omni Directional\nEnergy Flux')
 
     if ace_data:
         divider = make_axes_locatable(ax2)
         cax = divider.append_axes('right', size='5%', pad=0.05)
-        fig.colorbar(im_e, cax=cax, orientation='vertical').set_label(r'Summed Omni Flux')
+        fig.colorbar(im_e, cax=cax, orientation='vertical').set_label('Omni Directional\nEnergy Flux')
     
     divider = make_axes_locatable(ax3)
     cax = divider.append_axes('right', size='5%', pad=0.05)

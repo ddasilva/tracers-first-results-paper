@@ -268,7 +268,7 @@ def load_data(aci_file, ead_file=None, mlat=None, omni_spect=False):
     flux = cdf[f'{key}_l2_aci_tscs_def'][:]
 
     if omni_spect:
-        spect = flux.sum(axis=-1)
+        spect = flux.mean(axis=-1)
     else:
         spect = cdf[f'{key}_l2_aci_tscs_def'][:, :, 0:9].sum(axis=-1)
     

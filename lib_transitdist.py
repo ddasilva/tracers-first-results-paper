@@ -39,18 +39,43 @@ def calc_transit_dist(time, xline_file, ead_file, plot=True, lon_nbrhood_size=30
     sc_pos = load_sc_pos(ead_file, time)
     model = get_tsyganenko_model(time)
 
-    trace_points = do_traces(model, df_xline, sc_pos, lon_nbrhood_size)    
-    best_points = find_closest_trace(trace_points, sc_pos, lon_nbrhood_size, df_xline)
+    trace_points, xline_rows = do_traces(model, df_xline, sc_pos, lon_nbrhood_size)    
+    best_points, xline_row = find_closest_trace(trace_points, xline_rows, sc_pos, lon_nbrhood_size, df_xline)
     length = calc_length(best_points)
+
+    pos = (xline_row.XlinePosX, xline_row.XlinePosY, xline_row.XlinePosZ)
+    B = get_B(pos, time)
     
     if plot:
         plot_traces(trace_points, df_xline)
 
     if return_all:
-        return length, trace_points, df_xline
+        return length, B, xline_row
     else:
         return length
 
+    
+def get_B(pos, time):
+    params = models.get_tsyganenko_params(time)
+    gp_date = int(time.strftime("%Y%m%d"))
+    gp_ut = int(time.strftime("%H")) + time.minute / 60    
+    out = gp.ModelField(
+        *pos,
+        Date=gp_date,
+        ut=gp_ut,
+        Model='T96',
+        CoordIn='GSM',
+        CoordOut='GSM',
+        WithinMPOnly=False,
+        **params
+    )
+    out = np.array(out)
+    B = np.linalg.norm(out)
+
+    print("B = ", B)
+
+    return B
+    
 def calc_length(best_points):
     dx = np.diff(best_points[:, 0])
     dy = np.diff(best_points[:, 1])
@@ -89,7 +114,7 @@ def plot_traces(trace_points, df_xline):
 
     return ax
     
-def find_closest_trace(trace_points, sc_pos, lon_nbrhood_size, df_xline):
+def find_closest_trace(trace_points, xline_rows, sc_pos, lon_nbrhood_size, df_xline):
     best_points = None
     best_norm = np.inf
     best_idx = -1
@@ -116,7 +141,7 @@ def find_closest_trace(trace_points, sc_pos, lon_nbrhood_size, df_xline):
             f'lon_nbrhood_size (current value {lon_nbrhood_size} deg)'
         )
 
-    return best_points
+    return best_points, xline_rows[best_idx]
 
             
 def do_traces(
@@ -148,10 +173,11 @@ def do_traces(
 
         trace_starts.append(pos)
         traces.append(trace)
-
+        
     # Take part of field line going down to earth
     trace_points = []
     iterable = zip(traces, trace_starts, df_xline[mask].iterrows())
+    xline_rows = []
     
     for trace, trace_start, (_, row) in iterable:
         i = np.argmin(np.linalg.norm(trace.points[1:] - trace_start, axis=1))
@@ -160,8 +186,9 @@ def do_traces(
         y = trace.points[:i, 1]
         z = trace.points[:i, 2]
         trace_points.append((x, y, z))
-
-    return trace_points
+        xline_rows.append(row)
+        
+    return trace_points, xline_rows
 
 
 def get_tsyganenko_model(time):

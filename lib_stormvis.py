@@ -80,7 +80,7 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
             axes[0].plot(xs, ys, 'k.')
         
         top_x.append(df.iloc[i].start_time)
-        m = recon_rates[i].recon_rate < 5
+        m = recon_rates[i].recon_rate < 5 # drop out-of-family outliers
         top_y.append(np.max(recon_rates[i].recon_rate[m]))
 
     #axes[0].plot(top_x, top_y, color='k')
