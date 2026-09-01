@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D 
 
 
-def calc_transit_dist(time, xline_file, ead_file, plot=True, lon_nbrhood_size=30, return_all=False):
+def calc_transit_dist(time, xline_file, ead_file, plot=True, lon_nbrhood_size=180, return_all=False):
     """Estimate the transit distance from a X-line precipitation source to
     TRACERS.
 
@@ -21,9 +21,8 @@ def calc_transit_dist(time, xline_file, ead_file, plot=True, lon_nbrhood_size=30
     xline_file: Output from Trattner's Maximum Magnetic Shield Model X-line code
     ead_file: TRACERS EAD data file
     plot: set to True to make a 3D plot of the connectivity
-    lon_nbrhood_size: Constraints the search; you may be asked to make this larger
-      if the search ends up on edge of the neighborhood.
-
+    lon_nbrhood_size: Constraints the search
+    
     Algorithm description
     ---------------------  
     Calculating the distances requires merging T96 with Trattner's Xline model, 
@@ -134,12 +133,12 @@ def find_closest_trace(trace_points, xline_rows, sc_pos, lon_nbrhood_size, df_xl
             best_idx = i
             print(f'Found better trace in trace_points[{i}]')
 
-    if best_idx in (0, len(trace_points) - 1) and len(trace_points) < len(df_xline):
-        raise RuntimeError(
-            'The best trace is on the edge of the neighborhood. Please '
-            'rerun the algorithm with a higher settings for '
-            f'lon_nbrhood_size (current value {lon_nbrhood_size} deg)'
-        )
+    #if best_idx in (0, len(trace_points) - 1) and lon_nbrhood_size < 180:
+    #    raise RuntimeError(
+    #        'The best trace is on the edge of the neighborhood. Please '
+    #        'rerun the algorithm with a higher settings for '
+    #        f'lon_nbrhood_size (current value {lon_nbrhood_size} deg)'
+    #    )
 
     return best_points, xline_rows[best_idx]
 
@@ -147,7 +146,7 @@ def find_closest_trace(trace_points, xline_rows, sc_pos, lon_nbrhood_size, df_xl
 def do_traces(
         model, df_xline, sc_pos, lon_nbrhood_size,
         d_sf=0.025, min_good_trace_len=10, max_good_r=1.1,
-        trace_step_size=1e-3
+        trace_step_size=1e-3, max_i=40,
 ):
     # Select points in neighborhood of satellite longitude
     sc_r, sc_lat, sc_lon = astropy.coordinates.cartesian_to_spherical(*sc_pos)
@@ -165,14 +164,15 @@ def do_traces(
             pos = (row.x_sm * sf, row.y_sm * sf, row.z_sm * sf)
             trace = model.trace_field_line(pos, trace_step_size)
 
-            if trace.points.shape[0] > min_good_trace_len:
+            if trace.points.shape[0] > min_good_trace_len or i == max_i:
                 min_r = np.linalg.norm(trace.points, axis=1).min()
 
                 if min_r < max_good_r:
                     break
 
-        trace_starts.append(pos)
-        traces.append(trace)
+        if i < max_i:
+            trace_starts.append(pos)
+            traces.append(trace)
         
     # Take part of field line going down to earth
     trace_points = []
@@ -199,8 +199,8 @@ def get_tsyganenko_model(time):
     
     # Setup cartesian grid
     xaxis = np.arange(0, 20, 0.1)
-    yaxis = np.arange(-10, 10, 0.1)
-    zaxis = np.arange(-10, 10, 0.1)    
+    yaxis = np.arange(-20, 20, 0.1)
+    zaxis = np.arange(-20, 20, 0.1)    
     x, y, z = np.meshgrid(xaxis, yaxis, zaxis)
 
     # Evaluate model on the grid

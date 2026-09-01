@@ -115,7 +115,7 @@ class TRACERSData:
                     
         return Eic_clean
 
-    def calculate_recon_rate(self, alpha, d, Eic_frac=EIC_FRAC, ascending=True):
+    def calculate_recon_rate(self, alpha, d, dydyp=None, B_mp=None, Eic_frac=EIC_FRAC, ascending=True):
         """Calculate the reconnection rate
 
         Returns
@@ -131,6 +131,8 @@ class TRACERSData:
             self.mlat,
             alpha,
             d,
+            dydyp=dydyp,
+            B_mp=B_mp,
             return_error=True,
             ignore_uncertain=True,
             ascending=ascending,
@@ -142,7 +144,7 @@ class TRACERSData:
             Ey_mp['err_high'],
         )
         
-    def plot_recon_rate(self, stime, etime, alpha=0, d=16, Eic_frac=EIC_FRAC, data_file=None, cmap=None, ascending=True):
+    def plot_recon_rate(self, stime, etime, alpha=0, d=16, Eic_frac=EIC_FRAC, data_file=None, B_mp=None, cmap=None, dydyp=None, ascending=True):
         # Subset dispersion data and calculate reconnection rate
         dispersion_subset = self.subset(stime, etime)
         Eic = dispersion_subset.find_Eic(Eic_frac=Eic_frac)
@@ -150,6 +152,8 @@ class TRACERSData:
         recon_rate, err_low, err_high = dispersion_subset.calculate_recon_rate(
             alpha=alpha,
             d=d,
+            dydyp=dydyp,
+            B_mp=B_mp,
             Eic_frac=Eic_frac,
             ascending=ascending,
         )

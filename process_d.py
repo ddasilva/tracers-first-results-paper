@@ -46,9 +46,15 @@ for i, row in tqdm.tqdm(list(df.iterrows())):
     print(f'# Working on Row {i} out of {len(df) - 1}')
     print('#' * 60)
     out_name = f'output/{args.storm_name}/dprime_{i}.txt'
+    b_out_name = f'output/{args.storm_name}/b{i}.txt'
+    xline_out_name = f'output/{args.storm_name}/xline{i}.txt'
+    
     #if os.path.exists(out_name):
     #    continue
 
+    if i < 16:
+        continue
+    
     stime = row.start_time.to_pydatetime()
     xline_time = xline_times[np.argmin(np.abs(xline_times - stime))]
     time_str = xline_time.strftime("%Y%m%d_%H%M")
@@ -57,18 +63,13 @@ for i, row in tqdm.tqdm(list(df.iterrows())):
     xline_files.extend(glob.glob(f"data/{args.storm_name}/KH_Xline_Data/{time_str}*.txt"))
     xline_file = xline_files[0]
 
-    # Ten attempts with increasingly larger windows. Eventually we will
-    # reach a neighbor size equal to len(df_xline), which is an exhaustive
-    # search and cannot fail.
-    for j in range(1, 10):
-        try:
-            dprime = lib_transitdist.calc_transit_dist(
-                stime, xline_file, row.ead_file, plot=True,
-                lon_nbrhood_size=60*j
-            )
-            break
-        except Exception as e:
-            print(e)
+    # -----------------------------------------------------------
+    dprime, B, xline_row = lib_transitdist.calc_transit_dist(
+        stime, xline_file, row.ead_file,
+        lon_nbrhood_size=180,
+        plot=False,
+        return_all=True,
+    )
 
     os.makedirs(f'plots/dprime/{args.storm_name}', exist_ok=True)
     plt.savefig(f'plots/dprime/{args.storm_name}/dprime_plot_{i}.png', dpi=300)
@@ -77,3 +78,8 @@ for i, row in tqdm.tqdm(list(df.iterrows())):
     with open(out_name, 'w') as fh:
         fh.write(str(dprime))
     
+    with open(b_out_name, 'w') as fh:
+        fh.write(str(B))
+        
+    with open(xline_out_name, 'w') as fh:
+        fh.write(str(xline_row))

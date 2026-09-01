@@ -17,7 +17,7 @@ TRACERS_ALTITUDE = 600
 B0 = 30e3 * units.nT
 
 
-def estimate_reconn_rate(t, Eic, mlat, alpha, d, ignore_uncertain=True, Bmp=50, altitude=TRACERS_ALTITUDE, Bs=None, Vs=7.8, return_error=False, ascending=True):
+def estimate_reconn_rate(t, Eic, mlat, alpha, d, dydyp=None, ignore_uncertain=True, B_mp=None, altitude=TRACERS_ALTITUDE, Bs=None, Vs=7.8, return_error=False, ascending=True):
     """Estimate reconnection rate using in-situ measurements and
     solar wind data. 
 
@@ -34,6 +34,10 @@ def estimate_reconn_rate(t, Eic, mlat, alpha, d, ignore_uncertain=True, Bmp=50, 
       Ey_sat: reconnection rate at satellite (Ey in paper)
       Ey_mpause: reconnetion rate at magnetopause (Ey' in paper)
     """
+    if B_mp is None:
+        B_mp = 50
+
+    print("B_mp =", B_mp)
     # Calculate required parameters. Interpolate everything to the time axis
     # of Eic.
     # ------------------------------------------------------------------------
@@ -64,7 +68,7 @@ def estimate_reconn_rate(t, Eic, mlat, alpha, d, ignore_uncertain=True, Bmp=50, 
     dEicdt[dEicdt < 0] = np.nan
     
     # Magnetc field at MP
-    Bmp *= units.nT
+    B_mp *= units.nT
 
     # Magnetic field at satellite
     if Bs is None:
@@ -104,9 +108,12 @@ def estimate_reconn_rate(t, Eic, mlat, alpha, d, ignore_uncertain=True, Bmp=50, 
             /
             (1 + (d/2) * np.sqrt(m/2) * (Eic)**(-3/2) * sf * dEicdt)
         )
-        dy = np.sqrt(Bs / Bmp)
-        
-        Ey_final = Ey / dy
+
+        if dydyp is None:
+            sf = np.sqrt(Bs / B_mp)
+            Ey_final = Ey / sf
+        else:
+            Ey_final = Ey * dydyp
         
         Ey_sat[key] = Ey.to(units.mV/units.m)
         Ey_mpause[key] = Ey_final.to(units.mV/units.m)
