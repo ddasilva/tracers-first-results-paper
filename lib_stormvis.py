@@ -11,6 +11,8 @@ from datetime import timedelta
 
 SMOOTH_LAMBDA = 0.25
 
+    
+
 def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
     df = pd.read_csv(f'output/{storm}_filtered.csv', parse_dates=['start_time', 'end_time'], index_col=0)
 
@@ -28,6 +30,10 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
        "BY_GSM",
        "BZ_GSM",
        "Pressure",
+       "proton_density",
+       "flow_speed",
+       "AE_INDEX",
+        "AL_INDEX",
        "SYM_H",
     ]
     cdas = CdasWs()
@@ -36,17 +42,22 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
     omni_Bx = data_xarray['BX_GSE']
     omni_By = data_xarray['BY_GSM']
     omni_Bz = data_xarray['BZ_GSM']
-    omni_dynpres = data_xarray['Pressure']
+    omni_n = data_xarray['proton_density']
+    omni_v = data_xarray['flow_speed']
     symh = data_xarray['SYM_H']
-    
+    omni_ae = data_xarray['AE_INDEX']
+    omni_al = data_xarray['AL_INDEX']
+
     fill_value = 9999
     omni_Bx[omni_Bx>fill_value] = np.nan
     omni_By[omni_By>fill_value] = np.nan
     omni_Bz[omni_Bz>fill_value] = np.nan
     
     fill_value = 99
-    omni_dynpres[omni_dynpres>=fill_value] = np.nan
-
+    omni_n[omni_n>=fill_value] = np.nan
+    
+    fill_value = 99000
+    omni_v[omni_v>=fill_value] = np.nan
     # Load cpcp
     # -------------------------------------------------------------------
     if not no_cpcp: 
@@ -65,7 +76,7 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
 
     # Make Plot
     # ---------------------------------------------------------------
-    fig, axes = plt.subplots(4, 1, figsize=(8, 8), sharex=True)
+    fig, axes = plt.subplots(6, 1, figsize=(8, 12), sharex=True)
     top_x = []
     top_y = []
     
@@ -119,23 +130,29 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
     axes[1].plot(omni_epoch, omni_Bz, label='Bz', linewidth=0.5, color='#ff0000')
     axes[1].plot(omni_epoch, np.sqrt(omni_Bx**2 + omni_By**2 + omni_Bz**2), label='|B|', color='k', linewidth=0.5)
     axes[1].legend(ncol=1, bbox_to_anchor=(1.1, .5), loc='center right')
-    axes[1].grid(linestyle='dashed')
     axes[1].set_ylabel('OMNI IMF (nT)')
+    
+    axes[2].plot(omni_epoch, omni_n, color='y')
+    axes[2].set_ylabel(r'$n$ (cm$^{-3}$)')
+    axes[3].plot(omni_epoch, omni_v, color='orange')
+    axes[3].set_ylabel('$V_{sw}$ (km/s)')
+    axes[4].plot(omni_epoch, omni_ae, color='red', label='AE')
+    axes[4].plot(omni_epoch, omni_al, color='purple', label='AL')
+    axes[4].legend()
+    axes[4].set_ylabel('AE/AL (nT)')
 
-    axes[2].plot(omni_epoch, omni_dynpres, color='y')
-    axes[2].set_ylabel('$P_{dyn}$ (nPa)')
-    axes[2].grid(linestyle='dashed')
+    axes[5].plot(omni_epoch, symh, color='k')
+    axes[5].set_ylabel('SYM-H (nT)')
 
-    axes[3].grid(linestyle='dashed')
-    axes[3].plot(omni_epoch, symh, color='k')
-    axes[3].set_ylabel('SYM-H (nT)')
+    axes[5].xaxis.set_major_locator(mdates.DayLocator(interval=2))
 
-    axes[3].xaxis.set_major_locator(mdates.DayLocator(interval=2))
+    for ax in axes:
+        ax.grid(linestyle='dashed')
 
     print(f'SYM-H Minimum:', symh.min())
 
-    fig.suptitle(f'Dispersion Reconnection Rates During {title}', y=0.95)
-    fig.savefig(f'plots/{storm}_recon_during_storm.png', dpi=300, bbox_inches='tight')
+    fig.suptitle(f'Dispersion Reconnection Rates During {title}', y=0.90)
+    fig.savefig(f'plots/{storm}_recon_during_storm-rev1.png', dpi=300, bbox_inches='tight')
 
     if not no_cpcp and len(r2) > 3:
         plt.figure()
@@ -159,7 +176,8 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
                 ax.plot(xs, ys, '.', color=color, label=label)
             else:
                 ax.plot(xs, ys, 'k.')
-
+        
+        
         # Plot CPCP
         ax = ax.twinx()
         ax.plot(df_cpcp.DATE, df_cpcp.CPCP / 1000, alpha=0.5)
@@ -195,7 +213,6 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
 
         #x = (spl(date2num(top_x + dt)) - spl(date2num(top_x - dt))) / 2
         x = spl(date2num(top_x))
-
         y = top_y
         
         ax.plot(x[:i+1], y[:i+1], 'ko', color='#000000', label='Onset and Main Phase')
@@ -205,6 +222,9 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
         xvals = np.linspace(x.min() - 10, x.max() + 10,100)
         yvals = reg.slope * xvals + reg.intercept
         ax.plot(xvals, yvals, '-', color='k', label='Regression Fit (Onset and Main Phase Points)')
+
+        xs, ys = get_points_second_storm()
+        ax.plot(xs, ys, 'o', color='orange', label='January 19, 2026 Storm')
         ax.legend()
 
         ax.set_ylabel('Maximum Reconnection Rate\nper Dispersion (mV/m)')
@@ -217,5 +237,40 @@ def make_storm_vis(storm, start_time, end_time, title, no_cpcp=False, hl={}):
             ax.xaxis.set_major_locator(mdates.DayLocator(interval=3))
         
         fig.suptitle('Reconnection Rate and SuperDARN CPCP Correlation Analysis', y=0.92, fontsize=14)
-        fig.savefig(f'plots/{storm}_r2_analysis.png', dpi=300, bbox_inches='tight')
+        fig.savefig(f'plots/{storm}_r2_analysis-rev1.png', dpi=300, bbox_inches='tight')
         
+
+def get_points_second_storm():
+
+    # Load Reconnection Rate
+    df = pd.read_csv(f'output/Jan19_Storm_filtered.csv', parse_dates=['start_time', 'end_time'], index_col=0)
+
+    recon_rates = {}
+    
+    for i in range(len(df)):
+        recon_rates[i] = pd.read_csv(f'output/Jan19_Storm/recon_event{i}.csv')
+
+    # Load CPCP
+    cpcp_files = glob.glob(f'data/Jan19_Storm/daSilva-cpcp/*.txt')
+    dfs_tmp = []
+    
+    for cpcp_file in cpcp_files:
+        df_cpcp = pd.read_csv(cpcp_file, sep='\t')
+        df_cpcp.columns = df_cpcp.columns.str.strip()
+        df_cpcp['DATE'] = pd.to_datetime(df_cpcp['DATE'])
+        dfs_tmp.append(df_cpcp)
+    
+    df_cpcp = pd.concat(dfs_tmp)
+    df_cpcp = df_cpcp.sort_values('DATE')
+    df_cpcp = df_cpcp.drop_duplicates(subset=['DATE'])
+    spl = make_smoothing_spline(date2num(df_cpcp.DATE), df_cpcp.CPCP / 1000, lam=SMOOTH_LAMBDA)
+
+    xs = []
+    ys = []
+    
+    for i in range(len(df)):
+        x = spl(date2num(df.iloc[i].start_time))
+        m = recon_rates[i].recon_rate < 5 # drop out-of-family outliers
+        ys.append(np.max(recon_rates[i].recon_rate[m]))
+        xs.append(x)
+    return xs, ys
